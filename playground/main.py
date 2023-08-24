@@ -28,65 +28,67 @@ def location_callback(handle, data: bytearray):
     global start_time
     row = data.hex(':').split(':')
     if row[:2] == ['55','61']:
-        time_q.append(time.time()-start_time)
-        #data record
-        #acceleration
-        axl = int(row[2],16)
-        axh = int(row[3],16)
-        ayl = int(row[4],16)
-        ayh = int(row[5],16)
-        azl = int(row[6],16)
-        azh = int(row[7],16)
-        ax = (axh << 8 | axl) / 32768.0 * accRange
-        ay = (ayh << 8 | ayl) / 32768.0 * accRange
-        az = (azh << 8 | azl) / 32768.0 * accRange
-        if ax >= accRange:
-          ax -= 2 * accRange
-        if ay >= accRange:
-          ay -= 2 * accRange
-        if az >= accRange:
-          az -= 2 * accRange
-        ax_q.append(ax)
-        ay_q.append(ay)
-        az_q.append(az)
-        # gyro
-        vxl = int(row[8],16)
-        vxh = int(row[9],16)
-        vyl = int(row[10],16)
-        vyh = int(row[11],16)
-        vzl = int(row[12],16)
-        vzh = int(row[13],16)
-        wx = ((vxh<<8)|vxl)/32768*180
-        wy = ((vyh<<8)|vyl)/32768*180
-        wz = ((vzh<<8)|vzl)/32768*180
-        if wx >= gyroRange:
-            wx -= 2 * gyroRange
-        if wy >= gyroRange:
-            wy -= 2 * gyroRange
-        if wz >= gyroRange:
-            wz -= 2 * gyroRange
-        wx_q.append(wx)
-        wy_q.append(wy)
-        wz_q.append(wz)
-        # angle
-        rxl = int(row[14],16)
-        rxh = int(row[15],16)
-        ryl = int(row[16],16)
-        ryh = int(row[17],16)
-        rzl = int(row[18],16)
-        rzh = int(row[19],16)
-        rx = ((rxh<<8)|rxl)/32768*angleRange # nose angle
-        ry = ((ryh<<8)|ryl)/32768*angleRange # hyzer angle
-        rz = ((rzh<<8)|rzl)/32768*angleRange # "spin" angle -180 - 180 then resets
-        if rx >= angleRange:
-            rx -= 2 * angleRange
-        if ry >= angleRange:
-            ry -= 2 * angleRange
-        if rz >= angleRange:
-            rz -= 2 * angleRange
-        rx_q.append(rx)
-        ry_q.append(ry)
-        rz_q.append(rz)
+      t = time.time()-start_time
+      time_q.append(t)
+      #data record
+      #acceleration
+      axl = int(row[2],16)
+      axh = int(row[3],16)
+      ayl = int(row[4],16)
+      ayh = int(row[5],16)
+      azl = int(row[6],16)
+      azh = int(row[7],16)
+      ax = (axh << 8 | axl) / 32768.0 * accRange
+      ay = (ayh << 8 | ayl) / 32768.0 * accRange
+      az = (azh << 8 | azl) / 32768.0 * accRange
+      if ax >= accRange:
+        ax -= 2 * accRange
+      if ay >= accRange:
+        ay -= 2 * accRange
+      if az >= accRange:
+        az -= 2 * accRange
+      ax_q.append(ax)
+      ay_q.append(ay)
+      az_q.append(az)
+      # gyro
+      vxl = int(row[8],16)
+      vxh = int(row[9],16)
+      vyl = int(row[10],16)
+      vyh = int(row[11],16)
+      vzl = int(row[12],16)
+      vzh = int(row[13],16)
+      wx = ((vxh<<8)|vxl)/32768*180
+      wy = ((vyh<<8)|vyl)/32768*180
+      wz = ((vzh<<8)|vzl)/32768*180
+      if wx >= gyroRange:
+          wx -= 2 * gyroRange
+      if wy >= gyroRange:
+          wy -= 2 * gyroRange
+      if wz >= gyroRange:
+          wz -= 2 * gyroRange
+      wx_q.append(wx)
+      wy_q.append(wy)
+      wz_q.append(wz)
+      # angle
+      rxl = int(row[14],16)
+      rxh = int(row[15],16)
+      ryl = int(row[16],16)
+      ryh = int(row[17],16)
+      rzl = int(row[18],16)
+      rzh = int(row[19],16)
+      rx = ((rxh<<8)|rxl)/32768*angleRange # nose angle
+      ry = ((ryh<<8)|ryl)/32768*angleRange # hyzer angle
+      rz = ((rzh<<8)|rzl)/32768*angleRange # "spin" angle -180 - 180 then resets
+      if rx >= angleRange:
+          rx -= 2 * angleRange
+      if ry >= angleRange:
+          ry -= 2 * angleRange
+      if rz >= angleRange:
+          rz -= 2 * angleRange
+      rx_q.append(rx)
+      ry_q.append(ry)
+      rz_q.append(rz)
+      print(t, ax, ay, az, wx, wy, wz, rx, ry, rz)
 
 async def rebuild_graph():
     global ax_q, ay_q, az_q, time_q, fig, a1, a2, a3, fig
