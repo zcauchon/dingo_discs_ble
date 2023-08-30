@@ -17,9 +17,9 @@ time_q = [0]*displayRange
 ax_q = [0]*displayRange
 ay_q = [0]*displayRange
 az_q = [0]*displayRange
-wx_q = [0]*displayRange
-wy_q = [0]*displayRange
-wz_q = [0]*displayRange
+gx_q = [0]*displayRange
+gy_q = [0]*displayRange
+gz_q = [0]*displayRange
 rx_q = [0]*displayRange
 ry_q = [0]*displayRange
 rz_q = [0]*displayRange
@@ -51,24 +51,24 @@ def location_callback(handle, data: bytearray):
       ay_q.append(ay)
       az_q.append(az)
       # gyro
-      vxl = int(row[8],16)
-      vxh = int(row[9],16)
-      vyl = int(row[10],16)
-      vyh = int(row[11],16)
-      vzl = int(row[12],16)
-      vzh = int(row[13],16)
-      wx = ((vxh<<8)|vxl)/32768*180
-      wy = ((vyh<<8)|vyl)/32768*180
-      wz = ((vzh<<8)|vzl)/32768*180
-      if wx >= gyroRange:
-          wx -= 2 * gyroRange
-      if wy >= gyroRange:
-          wy -= 2 * gyroRange
-      if wz >= gyroRange:
-          wz -= 2 * gyroRange
-      wx_q.append(wx)
-      wy_q.append(wy)
-      wz_q.append(wz)
+      gxl = int(row[8],16)
+      gxh = int(row[9],16)
+      gyl = int(row[10],16)
+      gyh = int(row[11],16)
+      gzl = int(row[12],16)
+      gzh = int(row[13],16)
+      gx = ((gxh<<8)|gxl)/32768*180
+      gy = ((gyh<<8)|gyl)/32768*180
+      gz = ((gzh<<8)|gzl)/32768*180
+      if gx >= gyroRange:
+          gx -= 2 * gyroRange
+      if gy >= gyroRange:
+          gy -= 2 * gyroRange
+      if gz >= gyroRange:
+          gz -= 2 * gyroRange
+      gx_q.append(gx)
+      gy_q.append(gy)
+      gz_q.append(gz)
       # angle
       rxl = int(row[14],16)
       rxh = int(row[15],16)
@@ -88,7 +88,7 @@ def location_callback(handle, data: bytearray):
       rx_q.append(rx)
       ry_q.append(ry)
       rz_q.append(rz)
-      print(t, ax, ay, az, wx, wy, wz, rx, ry, rz)
+      print(t, ax, ay, az, gx, gy, gz, rx, ry, rz)
 
 async def rebuild_graph():
     global ax_q, ay_q, az_q, time_q, fig, a1, a2, a3, fig
@@ -106,13 +106,13 @@ async def rebuild_graph():
     a2.cla()
     a3.cla()
     a1.plot(time_q[-displayRange:], ax_q[-displayRange:], label="ax")
-    a2.plot(time_q[-displayRange:], wx_q[-displayRange:], label="wx")
+    a2.plot(time_q[-displayRange:], gx_q[-displayRange:], label="gx")
     a3.plot(time_q[-displayRange:], rx_q[-displayRange:], label="rx")
     a1.plot(time_q[-displayRange:], ay_q[-displayRange:], label="ay")
-    a2.plot(time_q[-displayRange:], wy_q[-displayRange:], label="wy")
+    a2.plot(time_q[-displayRange:], gy_q[-displayRange:], label="gy")
     a3.plot(time_q[-displayRange:], ry_q[-displayRange:], label="ry")
     a1.plot(time_q[-displayRange:], az_q[-displayRange:], label="az")
-    a2.plot(time_q[-displayRange:], wz_q[-displayRange:], label="wz")
+    a2.plot(time_q[-displayRange:], gz_q[-displayRange:], label="gz")
     a3.plot(time_q[-displayRange:], rz_q[-displayRange:], label="rz")
     fig.legend()
     plt.pause(.001)
