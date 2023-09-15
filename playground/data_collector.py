@@ -1,6 +1,8 @@
 import asyncio
 from bleak import BleakClient
 import time
+import json
+from kafka import KafkaProducer
 
 DEVICE = "F8:9C:FE:38:6E:5C"
 LOCATION_ID = '0000ffe4-0000-1000-8000-00805f9a34fb'
@@ -9,11 +11,11 @@ gyroRange = 2000.0
 angleRange = 180.0
 displayRange = 100
 
-def location_callback(handle, data: bytearray):
-    global start_time
+producer = KafkaProducer(bootstrap_servers='127.0.0.1:9092', compression_type='gzip', linger_ms=100)
+
+def data_callback(handle, data: bytearray):
     row = data.hex(':').split(':')
     if row[:2] == ['55','61']:
-      t = time.time()-start_time
       #data record
       #acceleration
       axl = int(row[2],16)
@@ -63,10 +65,11 @@ def location_callback(handle, data: bytearray):
           ry -= 2 * angleRange
       if rz >= angleRange:
           rz -= 2 * angleRange
-      print(t, ax, ay, az, gx, gy, gz, rx, ry, rz)
+      msg={'ax':ax, 'ay':ay, 'az':az, 'gx':gx, 'gy':gy, 'gz':gz, 'rx':rx, 'ry':ry, 'rz':rz}
+      msg_b = json.dumps(msg, indent=2).encode('utf-8')
+      producer.send(topic='disc_events', value=msg_b, key=DEVICE.encode('utf-8'))
 
 async def main(address):
-  global start_time
   async with BleakClient(address) as client:
     if (not client.is_connected):
       raise "client not connected"
@@ -76,12 +79,13 @@ async def main(address):
     time.sleep(5.5)
     print('calibrated!')
 
-    start_time = time.time()
-    await client.start_notify(LOCATION_ID, location_callback)
-    exit = input('Press any key to exit')
+    await client.start_notify(LOCATION_ID, data_callback)
+    counter = 0
     while True:
-      if exit is not None:
-         break
+      await asyncio.sleep(.1)
+      counter +=1
+      if counter > 30:
+        break
 
 if __name__ == '__main__':
   asyncio.run(main(DEVICE))
