@@ -1,54 +1,54 @@
 import argparse
 import logging
 import sys
+from typing import Iterable, Tuple
 
-from pyflink.common import WatermarkStrategy, Encoder, Types
-from pyflink.datastream import StreamExecutionEnvironment, RuntimeExecutionMode
-from pyflink.datastream.connectors.file_system import FileSource, StreamFormat, FileSink, OutputFileConfig, RollingPolicy
+from pyflink.common import WatermarkStrategy, Types
+from pyflink.common.typeinfo import RowTypeInfo
+from pyflink.datastream import StreamExecutionEnvironment, RuntimeExecutionMode, ProcessWindowFunction
+from pyflink.datastream.window import SlidingEventTimeWindows, Time
+from pyflink.datastream.connectors.kafka import KafkaSource, KafkaOffsetsInitializer, DeserializationSchema
+from pyflink.datastream.formats.json import JsonRowDeserializationSchema
 
-def word_count(input_path, output_path):
+class WindowCounter(ProcessWindowFunction):
+
+    def process(self, key: str, context: ProcessWindowFunction.Context,
+                elements: Iterable[Tuple[str, int]]) -> Iterable[str]:
+        count = 0
+        for _ in elements:
+            count += 1
+        yield "Window: {} count: {} Key {}".format(context.window(), count, key)
+
+def check_for_throw():
+    # Watches the entire stream and look at 3 sec windows to identify throws
+    # If throw is found capture window and send to db sink
     env = StreamExecutionEnvironment.get_execution_environment()
     env.set_runtime_mode(RuntimeExecutionMode.STREAMING)
     env.set_parallelism(1)
-    
-    ds = env.from_source(
-        source=FileSource.for_record_stream_format(
-            StreamFormat.text_line_format(),
-            input_path)
-                .process_static_file_set().build(),
-        watermark_strategy=WatermarkStrategy.for_monotonous_timestamps(),
-        source_name="file_source"
-    )
 
-    def split(line):
-        yield from line.split()
+    row_type_info = Types.ROW_NAMED(
+        ['device', 'ax', 'ay', 'az', 'gx', 'gy', 'gz', 'rx', 'ry', 'rz'],
+        [Types.STRING(), Types.BIG_DEC(), Types.BIG_DEC(), Types.BIG_DEC(), Types.BIG_DEC(), Types.BIG_DEC(), Types.BIG_DEC(), Types.BIG_DEC(), Types.BIG_DEC(), Types.BIG_DEC()])
+    deserialization_schema = JsonRowDeserializationSchema.Builder().type_info(row_type_info).build()
 
-    # compute word count
-    ds = ds.flat_map(split) \
-        .map(lambda i: (i, 1), output_type=Types.TUPLE([Types.STRING(), Types.INT()])) \
-        .key_by(lambda i: i[0]) \
-        .reduce(lambda i, j: (i[0], i[1] + j[1]))
-
-    # define the sink
-    print('writing to sink')
-    ds.sink_to(
-        sink=FileSink.for_row_format(
-            base_path=output_path,
-            encoder=Encoder.simple_string_encoder())
-        .with_output_file_config(
-            OutputFileConfig.builder()
-            .with_part_prefix("prefix")
-            .with_part_suffix(".ext")
-            .build())
-        .with_rolling_policy(RollingPolicy.default_rolling_policy())
+    kafkaSource = KafkaSource.builder() \
+        .set_bootstrap_servers('127.0.0.1:9092') \
+        .set_topics("disc_events") \
+        .set_starting_offsets(KafkaOffsetsInitializer.earliest()) \
+        .set_value_only_deserializer(deserialization_schema) \
         .build()
-    )
+    
+    ds = env.from_source(kafkaSource, WatermarkStrategy.for_monotonous_timestamps(), "disc_events_source")
+
+    results = ds \
+        .key_by(lambda x: x[0]) \
+        .window(SlidingEventTimeWindows.of(Time.seconds(3), Time.seconds(2))) \
+        .process(WindowCounter())
+
+    results.print()
 
     env.execute()
 
 if __name__ == '__main__':
     logging.basicConfig(stream=sys.stdout, level=logging.INFO, format="%(message)s")
-
-    input_path = '..\data\sample_data.csv'
-    output_path = '..\data\sample_output_data.csv'
-    word_count(input_path, output_path)
+    check_for_throw()
