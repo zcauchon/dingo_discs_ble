@@ -39,7 +39,7 @@ jobs:
           Event: ${{ github.event_name }}
           Body: ${{ toJson(github.event) }}
         run: |
-          echo "JSON_PAYLOAD=`echo '{"headers":{"user-agent":"GHAction", "x-github-event": ${{ env.Event }} },"body":{ ${{ env.Body }} }}'`" >> $GITHUB_ENV
+          echo "JSON_PAYLOAD=`echo '{"headers":{"user-agent":"GHAction", "x-github-event": ${{ env.Event }} },"body": ${{ env.Body }} }'`" >> $GITHUB_ENV
         # | openssl base64` >> $GITHUB_ENV
         # echo "JSON_PAYLOAD={\"headers\":{\"user-agent\":\"GHAction\", \"x-github-event\": $Event },\"body\":{ $Body }}" >> $GITHUB_ENV
       # call lambda
