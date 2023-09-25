@@ -37,12 +37,11 @@ jobs:
       - name: Build Payload
         env: 
           Event: ${{ github.event_name }}
-          Body: ${{ toJson(github.event) }}
+          Body: ${{ github.event }}
         run: |
           echo JSON_PAYLOAD=`echo '{"headers":{"user-agent":"GHAction", "x-github-event": ${{ env.Event }} },"body":{ ${{ env.Body }} }}' | openssl base64` >> $GITHUB_ENV
         # echo "JSON_PAYLOAD={\"headers\":{\"user-agent\":\"GHAction\", \"x-github-event\": $Event },\"body\":{ $Body }}" >> $GITHUB_ENV
       # call lambda
       - name: Call AWS Lambda
         run: |
-          echo ${{ env.JSON_PAYLOAD }}
           echo aws lambda invoke --function-name AMAC_CICD_Branch_Update --payload "${{ env.JSON_PAYLOAD }}" response.json
