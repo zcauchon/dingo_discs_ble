@@ -1,0 +1,34 @@
+name: Copy Repo and Start AWS Pipeline
+
+on:
+  push:
+    branches:
+      - "main"
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+    branches:
+      - "main"
+      - "dev"
+
+jobs:
+  deploy:
+    name: Copy Repo to Code Commit
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Determine Branch
+        run: |
+          if [[ $github.event_name == 'push' ]]; then
+            echo "BRANCH=$(echo $GITHUB_REF)" >> $GITHUB_ENV
+          else
+            echo "BRANCH=$(echo ${{ github.event.pull_request.head.ref }})" >> $GITHUB_ENV
+          fi
+    
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+          ref: ${{ env.BRANCH }}
