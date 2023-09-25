@@ -23,11 +23,11 @@ jobs:
       - name: Determine Branch
         run: |
           if [[ $github.event_name == 'push' ]]; then
-            echo "SOURCE"=$(echo $GITHUB_REF)" >> $GITHUB_ENV
-            echo "TARGET"=$(echo "") >> $GITHUB_ENV
+            echo "SOURCE=$(echo $GITHUB_REF)" >> $GITHUB_ENV
+            echo "TARGET=$(echo "")" >> $GITHUB_ENV
           else
             echo "SOURCE=$(echo ${{ github.event.pull_request.head.ref }})" >> $GITHUB_ENV
-            echo "TARGET"=$(echo ${{ github.event.pull_request.base.ref }}) >> $GITHUB_ENV
+            echo "TARGET=$(echo ${{ github.event.pull_request.base.ref }})" >> $GITHUB_ENV
           fi
     
       - uses: actions/checkout@v2
