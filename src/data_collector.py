@@ -31,7 +31,7 @@ async def main(address):
     while True:
       await asyncio.sleep(.1)
       counter +=1
-      if counter > 25:
+      if counter > 75:
         break
 
 if __name__ == '__main__':

@@ -1,4 +1,9 @@
 import json
+import time
+from pyflink.common import Types
+from pyflink.datastream.formats.json import JsonRowDeserializationSchema
+
+keys = ['device', 'ax', 'ay', 'az', 'gx', 'gy', 'gz', 'rx', 'ry', 'rz']
 
 class DiscEvent:
     accRange = 16.0
@@ -9,6 +14,7 @@ class DiscEvent:
 
     def __init__(self, device: str, row: bytearray) -> None:
         self.device = device
+        self.t = time.time()
         #data record
         #acceleration
         axl = int(row[2],16)
@@ -60,19 +66,16 @@ class DiscEvent:
             self.rz -= 2 * self.angleRange
     
     def getEncodedMessage(self):
-        msg = {
-            'device':self.device,
-            'ax':self.ax,
-            'ay':self.ay,
-            'az':self.az,
-            'gx':self.gx,
-            'gy':self.gy,
-            'gz':self.gz,
-            'rx':self.rx,
-            'ry':self.ry,
-            'rz':self.rz
-        }
+        values = [self.device,self.ax,self.ay,self.az,self.gx,self.gy,self.gz,self.rx,self.ry,self.rz]
+        msg = dict(zip(keys, values))
         return json.dumps(msg).encode(self.encoded_method)
     
     def getEncodedKey(self):
         return self.device.encode(self.encoded_method)
+    
+    @staticmethod
+    def getFlinkDeserializer():
+        row_type_info = Types.ROW_NAMED(
+            keys,
+            [Types.STRING(), Types.BIG_DEC(), Types.BIG_DEC(), Types.BIG_DEC(), Types.BIG_DEC(), Types.BIG_DEC(), Types.BIG_DEC(), Types.BIG_DEC(), Types.BIG_DEC(), Types.BIG_DEC()])
+        return JsonRowDeserializationSchema.Builder().type_info(row_type_info).build()      
